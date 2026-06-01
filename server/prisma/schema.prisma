@@ -1,0 +1,86 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(uuid())
+  name         String
+  email        String       @unique
+  password     String
+  role         Role         @default(CANDIDATE)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  sessions     Session[]
+}
+
+model Session {
+  id           String       @id @default(uuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id])
+  title        String       @default("Technical Interview")
+  status       SessionStatus @default(PENDING)
+  language     String       @default("javascript")
+  startedAt    DateTime?
+  endedAt      DateTime?
+  createdAt    DateTime     @default(now())
+  messages     Message[]
+  submissions  Submission[]
+  evaluation   Evaluation?
+}
+
+model Message {
+  id           String       @id @default(uuid())
+  sessionId    String
+  session      Session      @relation(fields: [sessionId], references: [id])
+  role         MessageRole
+  content      String       @db.Text
+  createdAt    DateTime     @default(now())
+}
+
+model Submission {
+  id           String       @id @default(uuid())
+  sessionId    String
+  session      Session      @relation(fields: [sessionId], references: [id])
+  language     String
+  code         String       @db.Text
+  result       String?      @db.Text
+  status       String?
+  score        Int?
+  createdAt    DateTime     @default(now())
+}
+
+model Evaluation {
+  id           String       @id @default(uuid())
+  sessionId    String       @unique
+  session      Session      @relation(fields: [sessionId], references: [id])
+  aiScore      Int
+  aiFeedback   String       @db.Text
+  strengths    String[]
+  improvements String[]
+  createdAt    DateTime     @default(now())
+}
+
+enum Role {
+  CANDIDATE
+  INTERVIEWER
+  ADMIN
+}
+
+enum SessionStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+}
